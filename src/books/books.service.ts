@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  HttpException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookEntity } from './entities/book.entity';
 import { Repository } from 'typeorm';
@@ -19,7 +14,10 @@ export class BooksService {
     return this.bookRepo.find();
   }
 
-  addNewBook(book: BookDTO) {
+  addNewBook(book: BookDTO, id) {
+    console.log(book, id);
+    book['user'] = id;
+
     return this.bookRepo.save(book);
   }
 
@@ -61,5 +59,23 @@ export class BooksService {
   }
   recoverBook(id) {
     return this.bookRepo.recover(id);
+  }
+
+  nbBooksPerYear() {
+    const qb = this.bookRepo.createQueryBuilder('book');
+    return qb
+      .select('book.year, count(book.id) as nbreDeLivres')
+      .groupBy('book.year')
+      .getRawMany();
+  }
+
+  nbBooksPerYearV2(yearMin: number, yearMax: number) {
+    const qb = this.bookRepo.createQueryBuilder('book');
+    return qb
+      .select('book.year, count(book.id) as nbDeBooks')
+      .where('book.year >= :y1 and book.year <= :y2')
+      .setParameters({ y1: yearMin, y2: yearMax })
+      .groupBy('book.year')
+      .getRawMany();
   }
 }
